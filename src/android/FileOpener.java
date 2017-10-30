@@ -99,6 +99,14 @@ public class FileOpener extends CordovaPlugin {
                 }
             }
             return true;
+        } else if ("canOpenLocalFile".equals(action)) {
+          if (extension != null) {
+              JSONObject obj = new JSONObject();
+              obj.put("extension", extension);
+              obj.put("canBeOpen", this.canOpenLocalFile(args, context));
+              callbackContext.success(obj);
+          }
+          return true;
         } else {
             return false;
         }
@@ -138,10 +146,19 @@ public class FileOpener extends CordovaPlugin {
     }
 
     private boolean canOpenFile(String extension, Context context) {
+      Intent intent = new Intent(Intent.ACTION_VIEW);
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      final File tempFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "test" + extension);
+      intent.setDataAndType(Uri.fromFile(tempFile), getMimeType(extension));
+      return context.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).size() > 0;
+    }
+
+    private boolean canOpenLocalFile(JSONArray args, Context context) throws JSONException {
+        String url = args.getString(0);
+        String mimeType = args.getString(1);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        final File tempFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "test" + extension);
-        intent.setDataAndType(Uri.fromFile(tempFile), getMimeType(extension));
+        intent.setDataAndType(Uri.parse(url), mimeType);
         return context.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).size() > 0;
     }
 
